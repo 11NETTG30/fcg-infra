@@ -12,25 +12,7 @@ O objetivo do projeto é a construção de uma **plataforma de games educacionai
 
 ## 🚀 Setup Inicial
 
-### 1. Configurar Variáveis de Ambiente do docker-compose
-
-```bash
-# Copie o arquivo de exemplo
-cp .env.example .env
-
-# Edite o .env com suas credenciais
-```
-
-### 2. Configurar Variáveis de Ambiente dos projetos
-
-```bash
-# Copie o arquivo de exemplo de cada projeto
-cp .env.example .env
-
-# Edite o .env com suas credenciais
-```
-
-### 3. Comandos Docker
+### 1. Comandos Docker
 
 ```bash
 # Criar personal access token no Github para acessar repositório:
@@ -68,10 +50,40 @@ docker push ghcr.io/11nettg30/payment-api:latest
 
 # Verificar se a imagem subiu corretamente:
 docker inspect ghcr.io/11nettg30/payment-api:latest
+```
 
-# Executar o docker-compose
-docker-compose up --build -d
+### 2. Comandos Kubernetes
+```bash
+#Aplicar o namespace:
+ kubectl apply -f .\namespace.yaml
 
-# Derrubar containers:
-docker-compose down
+#Subindo tudo 
+Obs: Garanta que as imagens dos microsserviços estão públicas (https://github.com/orgs/11NETTG30/packages):
+ kubectl apply -f .\k8s\rabbitmq\
+ kubectl apply -f .\k8s\fcg-payments\postgres\
+ kubectl apply -f .\k8s\fcg-payments\API\
+
+#Subir novamente um serviço:
+ kubectl rollout restart deployment payment-api -n fcg
+
+#Verificar Pods:
+ kubectl get pods -n fcg
+
+#Verificar services:
+ kubectl get svc -n fcg
+
+#Para deletar um pod:
+ kubectl delete pod postgres-payment-6645995bb5-wlvdd -n fcg
+
+#Para listar deployments
+ kubectl get deployments -n fcg
+
+#Para deletar deployments
+ kubectl delete deployment postgres-payment -n fcg
+
+#Para checar os logs de um pod:
+ kubectl logs postgres-payment-5f445b8b64-xdm6w -n fcg
+
+#Para deletar tudo:
+ kubectl delete all --all -n fcg
 ```

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payment-config
+  namespace: fcg
+data:
+  RABBITMQ_HOST: rabbitmq
+  OTEL_SERVICE_NAME: PaymentsAPI
+  OTEL_EXPORTER_OTLP_ENDPOINT: https://otlp.nr-data.net:4318

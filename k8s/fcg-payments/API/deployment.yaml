@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-api
+  namespace: fcg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-api
+  template:
+    metadata:
+      labels:
+        app: payment-api
+    spec:
+      containers:
+      - name: payment-api
+        image: ghcr.io/11nettg30/payment-api:latest
+        ports:
+          - containerPort: 8080
+        envFrom:
+          - secretRef:
+              name: payment-secret
+          - configMapRef:
+              name: payment-config

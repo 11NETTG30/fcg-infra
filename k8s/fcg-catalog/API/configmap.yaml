@@ -9,3 +9,5 @@ data:
   Jwt__Authority: http://users-api
   Jwt__Audiencia: fcg-services
   Documentacao__Habilitada: "true"
+  OTEL_SERVICE_NAME: CatalogAPI
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317

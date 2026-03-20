@@ -14,11 +14,13 @@
 #      127.0.0.1 users-api.fcg
 #      127.0.0.1 catalog-api.fcg
 #      127.0.0.1 rabbitmq.fcg
+#      127.0.0.1 grafana.fcg
 #
 # 4. Acessar no navegador:
 #      http://users-api.fcg/swagger/index.html
 #      http://catalog-api.fcg/swagger/index.html
 #      http://rabbitmq.fcg (Management UI)
+#      http://grafana.fcg (Grafana — admin/admin)
 #
 # IMPORTANTE: Se houver outro reverse proxy ocupando a porta 80 (ex: Traefik),
 # pare-o antes de iniciar o tunnel, caso contrário as requisições cairão nele
@@ -62,3 +64,13 @@ spec:
             name: rabbitmq
             port:
               number: 15672
+  - host: grafana.fcg
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000

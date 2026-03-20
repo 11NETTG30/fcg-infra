@@ -6,4 +6,4 @@ metadata:
 data:
   RABBITMQ_HOST: rabbitmq
   OTEL_SERVICE_NAME: PaymentsAPI
-  OTEL_EXPORTER_OTLP_ENDPOINT: https://otlp.nr-data.net:4318
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317

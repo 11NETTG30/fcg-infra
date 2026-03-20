@@ -6,3 +6,5 @@ metadata:
 data:
   RabbitMQ__Host: rabbitmq
   RabbitMQ__VirtualHost: /
+  OTEL_SERVICE_NAME: NotificationsAPI
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317

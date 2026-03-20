@@ -59,6 +59,9 @@ docker inspect ghcr.io/11nettg30/payment-api:latest
 
 #Subindo tudo 
 Obs: Garanta que as imagens dos microsserviços estão públicas (https://github.com/orgs/11NETTG30/packages):
+ kubectl apply -f .\k8s\ --recursive
+
+#Subir 1 a 1:
  kubectl apply -f .\k8s\rabbitmq\
  kubectl apply -f .\k8s\fcg-payments\postgres\
  kubectl apply -f .\k8s\fcg-payments\API\
@@ -86,4 +89,15 @@ Obs: Garanta que as imagens dos microsserviços estão públicas (https://github
 
 #Para deletar tudo:
  kubectl delete all --all -n fcg
+
+#Para deletar pvc dos bancos:
+ kubectl delete pvc -n fcg postgres-payment-pvc
+ kubectl delete pvc -n fcg postgres-users-pvc
+ kubectl delete pvc -n fcg postgres-catalog-pvc
+
+#Checar logs de um pod:
+ kubectl logs catalog-api-7574b4977c-j85jr -n fcg
+
+#Entrar em um pod:
+ kubectl exec -it postgres-catalog-747ff69686-h4bml -n fcg -- bash
 ```

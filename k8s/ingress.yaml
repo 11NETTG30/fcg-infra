@@ -10,6 +10,17 @@
 # 2. Iniciar o tunnel do Minikube (manter o terminal aberto):
 #      minikube tunnel
 #
+# Pré-requisitos (Utilizando o Kubernetes no Docker Desktop):
+#
+# 1. Instalar o Ingress:
+#     kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+#
+# 2. Verificar se está rodando:
+#     kubectl get pods -n ingress-nginx
+#     kubectl get svc -n ingress-nginx
+#
+# Após habilitar o Ingress:
+#
 # 3. Adicionar as entradas abaixo no arquivo hosts do sistema operacional:
 #      127.0.0.1 users-api.fcg
 #      127.0.0.1 catalog-api.fcg

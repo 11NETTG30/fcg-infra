@@ -6,3 +6,4 @@ metadata:
 data:
   RabbitMQ__Host: rabbitmq
   RabbitMQ__VirtualHost: /
+  Documentacao__Habilitada: "true"

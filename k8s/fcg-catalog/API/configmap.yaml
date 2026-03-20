@@ -8,3 +8,4 @@ data:
   RabbitMQ__VirtualHost: /
   Jwt__Authority: http://users-api
   Jwt__Audiencia: fcg-services
+  Documentacao__Habilitada: "true"

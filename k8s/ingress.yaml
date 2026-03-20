@@ -1,25 +1,64 @@
+# =============================================================================
+# Ingress — FCG (FIAP Cloud Games)
+# =============================================================================
+#
+# Pré-requisitos (Minikube com driver Docker):
+#
+# 1. Habilitar o addon do NGINX Ingress Controller:
+#      minikube addons enable ingress
+#
+# 2. Iniciar o tunnel do Minikube (manter o terminal aberto):
+#      minikube tunnel
+#
+# 3. Adicionar as entradas abaixo no arquivo hosts do sistema operacional:
+#      127.0.0.1 users-api.fcg
+#      127.0.0.1 catalog-api.fcg
+#      127.0.0.1 rabbitmq.fcg
+#
+# 4. Acessar no navegador:
+#      http://users-api.fcg/swagger/index.html
+#      http://catalog-api.fcg/swagger/index.html
+#      http://rabbitmq.fcg (Management UI)
+#
+# IMPORTANTE: Se houver outro reverse proxy ocupando a porta 80 (ex: Traefik),
+# pare-o antes de iniciar o tunnel, caso contrário as requisições cairão nele
+# em vez do NGINX Ingress Controller.
+# =============================================================================
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: fcg-ingress
   namespace: fcg
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
+  ingressClassName: nginx
   rules:
-  - http:
+  - host: users-api.fcg
+    http:
       paths:
-      - path: /users(/|$)(.*)
-        pathType: ImplementationSpecific
+      - path: /
+        pathType: Prefix
         backend:
           service:
             name: users-api
             port:
               number: 80
-      - path: /catalog(/|$)(.*)
-        pathType: ImplementationSpecific
+  - host: catalog-api.fcg
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
         backend:
           service:
             name: catalog-api
             port:
               number: 80
+  - host: rabbitmq.fcg
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: rabbitmq
+            port:
+              number: 15672

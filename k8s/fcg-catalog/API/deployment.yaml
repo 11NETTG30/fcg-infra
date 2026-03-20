@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-api
+  namespace: fcg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catalog-api
+  template:
+    metadata:
+      labels:
+        app: catalog-api
+    spec:
+      containers:
+      - name: catalog-api
+        image: ghcr.io/11nettg30/fcg-catalog-api:latest
+        ports:
+          - containerPort: 8080
+        envFrom:
+          - secretRef:
+              name: catalog-secret
+          - configMapRef:
+              name: catalog-config

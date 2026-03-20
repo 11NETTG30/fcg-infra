@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: catalog-config
+  namespace: fcg
+data:
+  RabbitMQ__Host: rabbitmq
+  RabbitMQ__VirtualHost: /
+  Jwt__Authority: http://users-api
+  Jwt__Audiencia: fcg-services

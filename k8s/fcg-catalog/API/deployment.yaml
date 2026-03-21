@@ -13,6 +13,31 @@ spec:
       labels:
         app: catalog-api
     spec:
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z postgres-catalog 5432; do
+                echo "Aguardando banco de dados catalog..."
+                sleep 3
+              done
+              echo "Banco OK!"
+
+        - name: wait-for-rabbitmq
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z rabbitmq 5672; do
+                echo "Aguardando RabbitMQ..."
+                sleep 3
+              done
+              echo "RabbitMQ OK!"
+
       containers:
       - name: catalog-api
         image: ghcr.io/11nettg30/fcg-catalog-api:latest

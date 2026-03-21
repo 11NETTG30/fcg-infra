@@ -13,6 +13,19 @@ spec:
       labels:
         app: notifications-api
     spec:
+      initContainers:
+        - name: wait-for-rabbitmq
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z rabbitmq 5672; do
+                echo "Aguardando RabbitMQ..."
+                sleep 3
+              done
+              echo "RabbitMQ OK!"
+
       containers:
       - name: notifications-api
         image: ghcr.io/11nettg30/fcg-notifications-api:latest

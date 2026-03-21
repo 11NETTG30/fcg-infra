@@ -1,0 +1,97 @@
+services:
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+
+  postgres-users:
+    image: postgres:18.1
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: fcg_users
+    volumes:
+      - postgres-users-data:/var/lib/postgresql/data
+
+  fcg-users:
+    image: ghcr.io/11nettg30/fcg-users-api:latest
+    ports:
+      - "5083:8080"
+    environment:
+      ConnectionStrings__DefaultConnection: Host=postgres-users;Port=5432;Database=fcg_users;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Jwt__ChavePrivadaRsaBase64: ${JWT_PRIVATE_KEY_BASE64}
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__VirtualHost: /
+      RabbitMQ__Username: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+    depends_on:
+      - postgres-users
+      - rabbitmq
+
+  postgres-catalog:
+    image: postgres:18.1
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: fcg_catalogo
+    volumes:
+      - postgres-catalog-data:/var/lib/postgresql/data
+
+  fcg-catalog:
+    image: ghcr.io/11nettg30/fcg-catalog-api:latest
+    ports:
+      - "5084:8080"
+    environment:
+      ConnectionStrings__DefaultConnection: Host=postgres-catalog;Port=5432;Database=fcg_catalogo;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__VirtualHost: /
+      RabbitMQ__Username: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      Jwt__Authority: http://fcg-users:8080
+      Jwt__Audiencia: fcg-services
+    depends_on:
+      - postgres-catalog
+      - rabbitmq
+      - fcg-users
+
+  postgres-payments:
+    image: postgres:18.1
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: fcg_payments
+    volumes:
+      - postgres-payments-data:/var/lib/postgresql/data
+
+  fcg-payments:
+    image: ghcr.io/11nettg30/fcg-payments-api:latest
+    ports:
+      - "5085:8080"
+    environment:
+      ConnectionStrings__DefaultConnection: Host=postgres-payments;Port=5432;Database=fcg_payments;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    depends_on:
+      - postgres-payments
+      - rabbitmq
+
+  fcg-notifications:
+    image: ghcr.io/11nettg30/fcg-notifications-api:latest
+    environment:
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__VirtualHost: /
+      RabbitMQ__User: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+    depends_on:
+      - rabbitmq
+
+volumes:
+  postgres-users-data:
+  postgres-catalog-data:
+  postgres-payments-data:

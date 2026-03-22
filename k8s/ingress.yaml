@@ -22,6 +22,7 @@
 # Após habilitar o Ingress:
 #
 # 3. Adicionar as entradas abaixo no arquivo hosts do sistema operacional:
+# (No windows: C:\Windows\System32\drivers\etc\hosts)
 #      127.0.0.1 users-api.fcg
 #      127.0.0.1 catalog-api.fcg
 #      127.0.0.1 rabbitmq.fcg

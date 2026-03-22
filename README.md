@@ -50,6 +50,11 @@ docker push ghcr.io/11nettg30/payment-api:latest
 
 # Verificar se a imagem subiu corretamente:
 docker inspect ghcr.io/11nettg30/payment-api:latest
+
+# Docker compose:
+docker-compose -f .\compose-images\docker-compose.yml up
+
+docker-compose -f .\compose-images\docker-compose.yml down
 ```
 
 ### 2. Comandos Kubernetes

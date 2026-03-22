@@ -95,6 +95,12 @@ services:
       - postgres-payments
       - rabbitmq
 
+  mailpit:
+    image: axllent/mailpit:v1.24
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
   fcg-notifications:
     build:
       context: ../../fcg-notifications/src
@@ -106,8 +112,12 @@ services:
       RabbitMQ__VirtualHost: /
       RabbitMQ__User: ${RABBITMQ_USER}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      Smtp__Host: mailpit
+      Smtp__Porta: "1025"
+      Smtp__Remetente: noreply@fcg.com
     depends_on:
       - rabbitmq
+      - mailpit
 
 secrets:
   nuget_token:

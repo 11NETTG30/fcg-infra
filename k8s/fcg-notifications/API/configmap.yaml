@@ -8,3 +8,6 @@ data:
   RabbitMQ__VirtualHost: /
   OTEL_SERVICE_NAME: NotificationsAPI
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+  Smtp__Host: mailpit
+  Smtp__Porta: "1025"
+  Smtp__Remetente: noreply@fcg.com

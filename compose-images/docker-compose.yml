@@ -104,6 +104,7 @@ services:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      Pagamento__TaxaReprovacao: "0.30"
     depends_on:
       postgres-payments:
         condition: service_healthy

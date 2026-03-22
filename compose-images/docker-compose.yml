@@ -16,7 +16,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: fcg_users
     volumes:
-      - postgres-users-data:/var/lib/postgresql/data
+      - postgres-users-data:/var/lib/postgresql
 
   fcg-users:
     image: ghcr.io/11nettg30/fcg-users-api:latest
@@ -29,6 +29,7 @@ services:
       RabbitMQ__VirtualHost: /
       RabbitMQ__Username: ${RABBITMQ_USER}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      Documentacao__Habilitada: "true"
     depends_on:
       - postgres-users
       - rabbitmq
@@ -40,7 +41,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: fcg_catalogo
     volumes:
-      - postgres-catalog-data:/var/lib/postgresql/data
+      - postgres-catalog-data:/var/lib/postgresql
 
   fcg-catalog:
     image: ghcr.io/11nettg30/fcg-catalog-api:latest
@@ -54,6 +55,7 @@ services:
       RabbitMQ__Password: ${RABBITMQ_PASSWORD}
       Jwt__Authority: http://fcg-users:8080
       Jwt__Audiencia: fcg-services
+      Documentacao__Habilitada: "true"
     depends_on:
       - postgres-catalog
       - rabbitmq
@@ -66,7 +68,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: fcg_payments
     volumes:
-      - postgres-payments-data:/var/lib/postgresql/data
+      - postgres-payments-data:/var/lib/postgresql
 
   fcg-payments:
     image: ghcr.io/11nettg30/fcg-payments-api:latest

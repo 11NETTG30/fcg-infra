@@ -16,12 +16,14 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: fcg_users
     volumes:
-      - postgres-users-data:/var/lib/postgresql/data
+      - postgres-users-data:/var/lib/postgresql
 
   fcg-users:
     build:
       context: ../../fcg-users
       dockerfile: Dockerfile
+      secrets:
+        - nuget_token
     ports:
       - "5083:8080"
     environment:
@@ -31,6 +33,7 @@ services:
       RabbitMQ__VirtualHost: /
       RabbitMQ__Username: ${RABBITMQ_USER}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      Documentacao__Habilitada: "true"
     depends_on:
       - postgres-users
       - rabbitmq
@@ -42,12 +45,14 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: fcg_catalogo
     volumes:
-      - postgres-catalog-data:/var/lib/postgresql/data
+      - postgres-catalog-data:/var/lib/postgresql
 
   fcg-catalog:
     build:
       context: ../../fcg-catalog
       dockerfile: Dockerfile
+      secrets:
+        - nuget_token
     ports:
       - "5084:8080"
     environment:
@@ -58,6 +63,7 @@ services:
       RabbitMQ__Password: ${RABBITMQ_PASSWORD}
       Jwt__Authority: http://fcg-users:8080
       Jwt__Audiencia: fcg-services
+      Documentacao__Habilitada: "true"
     depends_on:
       - postgres-catalog
       - rabbitmq
@@ -70,12 +76,14 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: fcg_payments
     volumes:
-      - postgres-payments-data:/var/lib/postgresql/data
+      - postgres-payments-data:/var/lib/postgresql
 
   fcg-payments:
     build:
       context: ../../fcg-payments/src
       dockerfile: API/Dockerfile
+      secrets:
+        - nuget_token
     ports:
       - "5085:8080"
     environment:
@@ -91,6 +99,8 @@ services:
     build:
       context: ../../fcg-notifications/src
       dockerfile: FCG.Notifications.API/Dockerfile
+      secrets:
+        - nuget_token
     environment:
       RabbitMQ__Host: rabbitmq
       RabbitMQ__VirtualHost: /
@@ -98,6 +108,10 @@ services:
       RabbitMQ__Password: ${RABBITMQ_PASSWORD}
     depends_on:
       - rabbitmq
+
+secrets:
+  nuget_token:
+    environment: NUGET_AUTH_TOKEN
 
 volumes:
   postgres-users-data:

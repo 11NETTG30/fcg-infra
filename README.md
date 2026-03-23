@@ -1,108 +1,227 @@
-# FIAP Cloud Games (FCG) - Repositório de Orquestração - fcg-infra
+# fcg-infra
 
-## 📚 Sobre o Projeto
+Repositório de infraestrutura do **FIAP Cloud Games (FCG)**.
 
-Este repositório faz parte do **Tech Challenge da Pós-Graduação em Arquitetura de Sistemas .NET da FIAP**, **Turma 11NETT – Grupo 30**.
-
-Este é o repositório de orquestração dos microsserviços.
-
-O objetivo do projeto é a construção de uma **plataforma de games educacionais**, chamada **FIAP Cloud Games (FCG)**, voltada para o aprendizado e prática de conceitos de tecnologia, utilizando boas práticas de arquitetura de software.
+Contém os arquivos Docker Compose e manifestos Kubernetes para orquestrar todos os microsserviços do ecossistema FCG.
 
 ---
 
-## 🚀 Setup Inicial
+## Estrutura do Repositório
 
-### 1. Comandos Docker
-
-```bash
-# Criar personal access token no Github para acessar repositório:
-URL da documentação: https://docs.github.com/pt/packages/working-with-a-github-packages-registry/working-with-the-container-registry
-
-Acesse a URL: https://github.com/settings/tokens/new?scopes=write:packages
-
-# Logar no serviço do Container Registry:
-
-Opção 1:
-Salve o token como variável de ambiente:
-
-Linux:
-export CR_PAT=YOUR_TOKEN
-Windows (temporário):
-set CR_PAT YOUR_TOKEN
-Windows (permanente):
-setx CR_PAT YOUR_TOKEN
-
-Entrar no serviço do Container registry:
-echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
-
-
-OU, Opção 2:
-Faça login no registry pelo Developer PowerShell:
-
-docker login ghcr.io -u NOMEUSUARIO
-e digitar o token obtido anteriormente.
-
-#Fazer o build da imagem:
-docker build -t ghcr.io/11nettg30/payment-api:latest -f src/API/Dockerfile src
-
-# Fazer push da imagem:
-docker push ghcr.io/11nettg30/payment-api:latest
-
-# Verificar se a imagem subiu corretamente:
-docker inspect ghcr.io/11nettg30/payment-api:latest
-
-# Docker compose:
-docker-compose -f .\compose-images\docker-compose.yml up
-
-docker-compose -f .\compose-images\docker-compose.yml down
+```
+fcg-infra/
+├── compose-images/     ← Docker Compose usando imagens publicadas no GHCR
+├── compose-builds/     ← Docker Compose com build local dos microsserviços
+└── k8s/
+    ├── namespace.yaml
+    ├── ingress.yaml
+    ├── rabbitmq/
+    ├── mailpit/
+    ├── fcg-users/      ← API + PostgreSQL
+    ├── fcg-catalog/    ← API + PostgreSQL
+    ├── fcg-payments/   ← API + PostgreSQL
+    ├── fcg-notifications/
+    └── observabilidade/
+        ├── grafana/
+        ├── loki/
+        ├── otel-collector/
+        ├── prometheus/
+        └── tempo/
 ```
 
-### 2. Comandos Kubernetes
+---
+
+## Serviços de Suporte
+
+### Observabilidade
+
+| Serviço | Descrição |
+|---|---|
+| **OTel Collector** | Ponto central de coleta de telemetria. Recebe métricas, logs e traces dos microsserviços via protocolo OTLP e os encaminha para os backends apropriados (Prometheus, Loki e Tempo). Desacopla os serviços das ferramentas de observabilidade — se trocar o backend, só muda a configuração do Collector |
+| **Prometheus** | Banco de dados de séries temporais para métricas. Coleta e armazena dados como latência de requisições, taxa de erros e uso de recursos. Base para os painéis de métricas no Grafana |
+| **Loki** | Agregador de logs. Indexa e armazena os logs de todos os serviços de forma eficiente, permitindo buscas por texto e por labels (ex: serviço, nível de log). Integrado ao Grafana para consulta |
+| **Tempo** | Backend de tracing distribuído. Armazena os traces gerados pelos microsserviços, permitindo visualizar o caminho completo de uma requisição passando por múltiplos serviços e identificar gargalos. Integrado ao Grafana para exploração |
+| **Grafana** | Interface de visualização unificada para toda a stack de observabilidade. Reúne em um único lugar dashboards de métricas (Prometheus), busca de logs (Loki) e exploração de traces (Tempo) |
+
+### Mailpit
+
+Servidor SMTP para desenvolvimento. Captura todos os e-mails enviados pelos microsserviços e os exibe em uma interface web, sem precisar de uma conta de e-mail real nem de configuração de SMTP externo. Útil para validar os e-mails disparados pelo `fcg-notifications`.
+
+Acessível em `http://mailpit.fcg` (Kubernetes) ou `http://localhost:8025` (Docker Compose).
+
+---
+
+## Pré-requisitos
+
+- [Docker](https://www.docker.com/) + Docker Compose
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [Minikube](https://minikube.sigs.k8s.io/) (ou Kubernetes via Docker Desktop)
+- Acesso ao GitHub Container Registry (GHCR) da organização [11NETTG30](https://github.com/orgs/11NETTG30/packages)
+
+---
+
+## Docker Compose
+
+Existem dois ambientes Docker Compose com propósitos distintos:
+
+| Pasta | Descrição |
+|---|---|
+| `compose-images/` | Sobe o ambiente completo usando as imagens já publicadas no GHCR |
+| `compose-builds/` | Faz o build local de cada microsserviço a partir do código-fonte |
+
+### Portas expostas (Docker Compose)
+
+| Serviço | Porta |
+|---|---|
+| fcg-users | `5083` |
+| fcg-catalog | `5084` |
+| fcg-payments | `5085` |
+| RabbitMQ Management | `15672` |
+| Mailpit (UI) | `8025` |
+
+### 1. Configurar variáveis de ambiente
+
+Copie o arquivo de exemplo e preencha os valores:
+
 ```bash
-#Aplicar o namespace:
- kubectl apply -f .\namespace.yaml
+# compose-images
+cp compose-images/.env.example compose-images/.env
 
-#Subindo tudo 
-Obs: Garanta que as imagens dos microsserviços estão públicas (https://github.com/orgs/11NETTG30/packages):
- kubectl apply -f .\k8s\ --recursive
+# compose-builds
+cp compose-builds/.env.example compose-builds/.env
+```
 
-#Subir 1 a 1:
- kubectl apply -f .\k8s\rabbitmq\
- kubectl apply -f .\k8s\fcg-payments\postgres\
- kubectl apply -f .\k8s\fcg-payments\API\
+> O `compose-builds/.env` tem um campo extra: `NUGET_AUTH_TOKEN` — PAT do GitHub com escopo `read:packages`, necessário para restaurar os pacotes NuGet do [fcg-shared](https://github.com/11NETTG30/fcg-shared).
 
-#Subir novamente um serviço:
- kubectl rollout restart deployment payment-api -n fcg
+### 2. Subir o ambiente
 
-#Verificar Pods:
- kubectl get pods -n fcg
+```bash
+# Usando imagens publicadas
+docker compose -f compose-images/docker-compose.yml up -d
 
-#Verificar services:
- kubectl get svc -n fcg
+# Ou fazendo build local (aproveita cache se as imagens já existem)
+docker compose -f compose-builds/docker-compose.yml up -d
 
-#Para deletar um pod:
- kubectl delete pod postgres-payment-6645995bb5-wlvdd -n fcg
+# Rebuild obrigatório (use após alterações no código-fonte)
+docker compose -f compose-builds/docker-compose.yml up -d --build
+```
 
-#Para listar deployments
- kubectl get deployments -n fcg
+### Comandos úteis
 
-#Para deletar deployments
- kubectl delete deployment postgres-payment -n fcg
+```bash
+# Parar
+docker compose -f compose-images/docker-compose.yml down
 
-#Para checar os logs de um pod:
- kubectl logs postgres-payment-5f445b8b64-xdm6w -n fcg
+# Parar e remover volumes (apaga dados dos bancos)
+docker compose -f compose-images/docker-compose.yml down -v
+```
 
-#Para deletar tudo:
- kubectl delete all --all -n fcg
+---
 
-#Para deletar pvc dos bancos:
- kubectl delete pvc -n fcg postgres-payment-pvc
- kubectl delete pvc -n fcg postgres-users-pvc
- kubectl delete pvc -n fcg postgres-catalog-pvc
+## Kubernetes
 
-#Checar logs de um pod:
- kubectl logs catalog-api-7574b4977c-j85jr -n fcg
+### Pré-requisitos
 
-#Entrar em um pod:
- kubectl exec -it postgres-catalog-747ff69686-h4bml -n fcg -- bash
+**Minikube:**
+
+```bash
+# Habilitar o Ingress Controller
+minikube addons enable ingress
+
+# Iniciar o tunnel (manter o terminal aberto)
+minikube tunnel
+```
+
+**Docker Desktop:**
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+```
+
+### Configurar o arquivo hosts
+
+Adicione as entradas abaixo no arquivo hosts do sistema operacional:
+- **Linux / macOS:** `/etc/hosts`
+- **Windows:** `C:\Windows\System32\drivers\etc\hosts`
+
+```
+127.0.0.1 users-api.fcg
+127.0.0.1 catalog-api.fcg
+127.0.0.1 rabbitmq.fcg
+127.0.0.1 grafana.fcg
+127.0.0.1 mailpit.fcg
+```
+
+### Configurar secrets
+
+Cada serviço possui um `secret.example.yaml` com os campos necessários. Copie e preencha antes de aplicar:
+
+```bash
+cp k8s/rabbitmq/secret.example.yaml           k8s/rabbitmq/secret.yaml
+cp k8s/fcg-users/API/secret.example.yaml      k8s/fcg-users/API/secret.yaml
+cp k8s/fcg-users/postgres/secret.example.yaml k8s/fcg-users/postgres/secret.yaml
+# ... repita para os demais serviços
+```
+
+### Subir o ambiente
+
+```bash
+# Aplicar namespace (primeira vez)
+kubectl apply -f k8s/namespace.yaml
+
+# Garantir que as imagens dos microsserviços estão públicas no GHCR:
+# https://github.com/orgs/11NETTG30/packages
+
+# Aplicar todos os manifestos recursivamente
+kubectl apply -f k8s/ --recursive
+```
+
+### URLs de acesso
+
+| Serviço | URL |
+|---|---|
+| fcg-users (Swagger) | http://users-api.fcg/swagger/index.html |
+| fcg-catalog (Swagger) | http://catalog-api.fcg/swagger/index.html |
+| RabbitMQ Management | http://rabbitmq.fcg |
+| Grafana | http://grafana.fcg (admin / admin) |
+| Mailpit | http://mailpit.fcg |
+
+### Atualizar um serviço
+
+Após publicar uma nova imagem com a mesma tag (ex: `:latest`), o `apply` sozinho não recria os pods pois o manifesto não mudou. Use:
+
+```bash
+kubectl rollout restart deployment <nome-do-deployment> -n fcg
+```
+
+### Comandos de diagnóstico
+
+```bash
+# Listar pods
+kubectl get pods -n fcg
+
+# Listar services
+kubectl get svc -n fcg
+
+# Listar deployments
+kubectl get deployments -n fcg
+
+# Logs de um pod
+kubectl logs <nome-do-pod> -n fcg
+
+# Entrar em um pod
+kubectl exec -it <nome-do-pod> -n fcg -- bash
+
+# Reiniciar um deployment
+kubectl rollout restart deployment <nome-do-deployment> -n fcg
+```
+
+### Limpeza
+
+```bash
+# Remover todos os recursos do namespace
+kubectl delete all --all -n fcg
+
+# Remover PVCs dos bancos de dados
+kubectl delete pvc -n fcg --all
 ```

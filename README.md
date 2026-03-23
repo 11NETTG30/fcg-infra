@@ -6,7 +6,7 @@ Contém os arquivos Docker Compose e manifestos Kubernetes para orquestrar todos
 
 ---
 
-## Estrutura do Repositório
+## 📁 Estrutura do Repositório
 
 ```
 fcg-infra/
@@ -31,7 +31,7 @@ fcg-infra/
 
 ---
 
-## Serviços de Suporte
+## 🔧 Serviços de Suporte
 
 ### Observabilidade
 
@@ -51,7 +51,7 @@ Acessível em `http://mailpit.fcg` (Kubernetes) ou `http://localhost:8025` (Dock
 
 ---
 
-## Pré-requisitos
+## 📋 Pré-requisitos
 
 - [Docker](https://www.docker.com/) + Docker Compose
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
@@ -60,7 +60,7 @@ Acessível em `http://mailpit.fcg` (Kubernetes) ou `http://localhost:8025` (Dock
 
 ---
 
-## Docker Compose
+## 🐳 Docker Compose
 
 Existem dois ambientes Docker Compose com propósitos distintos:
 
@@ -118,7 +118,7 @@ docker compose -f compose-images/docker-compose.yml down -v
 
 ---
 
-## Kubernetes
+## ☸️ Kubernetes
 
 ### Pré-requisitos
 

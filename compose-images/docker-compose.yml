@@ -101,9 +101,10 @@ services:
       - "5085:8080"
     environment:
       ConnectionStrings__DefaultConnection: Host=postgres-payments;Port=5432;Database=fcg_payments;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_USER: ${RABBITMQ_USER}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__VirtualHost: /
+      RabbitMQ__Username: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
       Pagamento__TaxaReprovacao: "0.30"
     depends_on:
       postgres-payments:

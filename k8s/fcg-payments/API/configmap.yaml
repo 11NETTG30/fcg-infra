@@ -4,7 +4,8 @@ metadata:
   name: payment-config
   namespace: fcg
 data:
-  RABBITMQ_HOST: rabbitmq
+  RabbitMQ__Host: rabbitmq
+  RabbitMQ__VirtualHost: /
   Pagamento__TaxaReprovacao: "0.30"
   OTEL_SERVICE_NAME: PaymentsAPI
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317

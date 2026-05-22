@@ -46,6 +46,26 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  mongoDb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   postgres-catalog:
     image: postgres:18.1
     environment:
@@ -66,10 +86,13 @@ services:
       - "5084:8080"
     environment:
       ConnectionStrings__DefaultConnection: Host=postgres-catalog;Port=5432;Database=fcg_catalogo;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      ConnectionStrings__Redis: redis:6379,abortConnect=false
       RabbitMQ__Host: rabbitmq
       RabbitMQ__VirtualHost: /
       RabbitMQ__Username: ${RABBITMQ_USER}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      MongoDB__ConnectionString: ${MONGODB_CONNECTION_STRING}
+      MongoDB__DatabaseName: ${MONGODB_DATABASE_NAME}
       Jwt__Authority: http://fcg-users:8080
       Jwt__Audiencia: fcg-services
       Documentacao__Habilitada: "true"
@@ -80,6 +103,10 @@ services:
         condition: service_healthy
       fcg-users:
         condition: service_started
+      redis:
+        condition: service_healthy
+      mongoDb:
+        condition: service_healthy
 
   postgres-payments:
     image: postgres:18.1

@@ -214,6 +214,10 @@ kubectl exec -it <nome-do-pod> -n fcg -- bash
 
 # Reiniciar um deployment
 kubectl rollout restart deployment <nome-do-deployment> -n fcg
+
+# Conectar em um banco de dados:
+kubectl port-forward svc/mongodb-catalog -n fcg 27017:27017
+
 ```
 
 ### Limpeza

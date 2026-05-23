@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb-catalog
+  namespace: fcg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb-catalog
+  template:
+    metadata:
+      labels:
+        app: mongodb-catalog
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:7.0
+        ports:
+          - containerPort: 27017
+        volumeMounts:
+          - mountPath: /var/lib/mongodb
+            name: mongodb-storage
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+        - name: mongodb-storage
+          persistentVolumeClaim:
+            claimName: mongodb-catalog-pvc

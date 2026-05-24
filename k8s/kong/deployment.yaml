@@ -1,0 +1,171 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong
+  namespace: fcg
+  labels:
+    app: kong
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: kong
+
+  template:
+    metadata:
+      labels:
+        app: kong
+
+    spec:
+      initContainers:
+        - name: wait-for-config
+          image: busybox:1.36
+
+          command:
+            - sh
+            - -c
+            - |
+              until test -f /etc/kong/kong.yaml; do
+                echo "Aguardando kong.yaml..."
+                sleep 2
+              done
+
+              echo "Configuração encontrada."
+
+          volumeMounts:
+            - name: kong-config-volume
+              mountPath: /etc/kong
+
+      containers:
+        - name: kong
+          image: kong:3.9
+
+          command:
+            - /docker-entrypoint.sh
+
+          args:
+            - kong
+            - docker-start
+
+          ports:
+            - name: proxy
+              containerPort: 8000
+
+            - name: proxy-ssl
+              containerPort: 8443
+
+            - name: admin
+              containerPort: 8001
+
+            - name: admin-ssl
+              containerPort: 8444
+
+            - name: status
+              containerPort: 8100
+
+          env:
+            - name: KONG_DATABASE
+              value: "off"
+
+            - name: KONG_DECLARATIVE_CONFIG
+              value: /etc/kong/kong.yaml
+
+            - name: KONG_PROXY_LISTEN
+              value: "0.0.0.0:8000 reuseport backlog=16384, 0.0.0.0:8443 http2 ssl reuseport backlog=16384"
+
+            - name: KONG_ADMIN_LISTEN
+              value: "0.0.0.0:8001 reuseport backlog=16384"
+
+            - name: KONG_STATUS_LISTEN
+              value: "0.0.0.0:8100"
+
+            - name: KONG_PROXY_ACCESS_LOG
+              value: /dev/stdout
+
+            - name: KONG_PROXY_ERROR_LOG
+              value: /dev/stderr
+
+            - name: KONG_ADMIN_ACCESS_LOG
+              value: /dev/stdout
+
+            - name: KONG_ADMIN_ERROR_LOG
+              value: /dev/stderr
+
+            - name: KONG_LOG_LEVEL
+              value: notice
+
+            - name: KONG_PLUGINS
+              value: bundled
+
+            - name: KONG_TRUSTED_IPS
+              value: "0.0.0.0/0"
+
+            - name: KONG_REAL_IP_HEADER
+              value: X-Forwarded-For
+
+            - name: KONG_REAL_IP_RECURSIVE
+              value: "on"
+
+            - name: KONG_NGINX_WORKER_PROCESSES
+              value: "1"
+
+            - name: KONG_MEM_CACHE_SIZE
+              value: "64m"
+
+            - name: KONG_LUA_SSL_TRUSTED_CERTIFICATE
+              value: system
+
+          volumeMounts:
+            - name: kong-config-volume
+              mountPath: /etc/kong
+              readOnly: true
+
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: 8100
+
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 8100
+
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 5
+
+          startupProbe:
+            httpGet:
+              path: /status
+              port: 8100
+
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 24
+
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+
+            limits:
+              memory: "768Mi"
+              cpu: "1000m"
+
+      volumes:
+        - name: kong-config-volume
+          configMap:
+            name: kong-config
+
+            items:
+              - key: kong.yaml
+                path: kong.yaml

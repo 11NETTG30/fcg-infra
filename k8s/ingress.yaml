@@ -23,18 +23,48 @@
 #
 # 3. Adicionar as entradas abaixo no arquivo hosts do sistema operacional:
 # (No windows: C:\Windows\System32\drivers\etc\hosts)
-#      127.0.0.1 users-api.fcg
-#      127.0.0.1 catalog-api.fcg
+#      127.0.0.1 api.fcg
 #      127.0.0.1 rabbitmq.fcg
 #      127.0.0.1 grafana.fcg
 #      127.0.0.1 mailpit.fcg
 #
-# 4. Acessar no navegador:
-#      http://users-api.fcg/swagger/index.html
-#      http://catalog-api.fcg/swagger/index.html
-#      http://rabbitmq.fcg (Management UI)
-#      http://grafana.fcg (Grafana — admin/admin)
-#      http://mailpit.fcg (Mailpit — caixa de e-mails)
+# 4. Acesso às ferramentas de infraestrutura (direto, sem Kong):
+#      http://rabbitmq.fcg  (Management UI)
+#      http://grafana.fcg   (Grafana — admin/admin)
+#      http://mailpit.fcg   (Mailpit — caixa de e-mails)
+#
+# ACESSO AO SWAGGER (documentação das APIs):
+#
+#   O Swagger não é roteado pelo Kong pois depende de assets e configurações
+#   internas de cada microsserviço. Para consultá-lo, use port-forward direto:
+#
+#     kubectl port-forward svc/users-api 5083:80 -n fcg
+#     kubectl port-forward svc/catalog-api 5084:80 -n fcg
+#
+#   Acesse no navegador:
+#     http://localhost:5083/swagger/index.html  (Users API)
+#     http://localhost:5084/swagger/index.html  (Catalog API)
+#
+#   IMPORTANTE: O "Try it out" do Swagger bate diretamente na API via
+#   port-forward, sem passar pelo Kong. Use-o apenas para consultar rotas.
+#   Para validar o roteamento pelo Kong, use o Postman (veja abaixo).
+#
+# ACESSO VIA POSTMAN (validação do roteamento pelo Kong):
+#
+#   Todas as requisições passam por: NGINX Ingress → Kong → Microsserviço
+#
+#   Exemplos Users API:
+#     POST http://api.fcg/identidade/auth/registrar
+#     POST http://api.fcg/identidade/auth/login
+#     GET  http://api.fcg/identidade/usuarios
+#
+#   ExemplosCatalog API:
+#     GET  http://api.fcg/catalogo/biblioteca-usuario
+#     POST http://api.fcg/catalogo/biblioteca-usuario/comprar
+#
+# ARQUITETURA DE ROTEAMENTO (Fase 3):
+#
+#   Cliente → NGINX Ingress → Kong (kong-proxy:80) → Microsserviço
 #
 # IMPORTANTE: Se houver outro reverse proxy ocupando a porta 80 (ex: Traefik),
 # pare-o antes de iniciar o tunnel, caso contrário as requisições cairão nele
@@ -45,29 +75,23 @@ kind: Ingress
 metadata:
   name: fcg-ingress
   namespace: fcg
+  annotations:
+    nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
 spec:
   ingressClassName: nginx
   rules:
-  - host: users-api.fcg
+
+  - host: api.fcg
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: users-api
+            name: kong-proxy
             port:
               number: 80
-  - host: catalog-api.fcg
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: catalog-api
-            port:
-              number: 80
+
   - host: rabbitmq.fcg
     http:
       paths:
@@ -78,6 +102,7 @@ spec:
             name: rabbitmq
             port:
               number: 15672
+
   - host: grafana.fcg
     http:
       paths:
@@ -88,6 +113,7 @@ spec:
             name: grafana
             port:
               number: 3000
+
   - host: mailpit.fcg
     http:
       paths:

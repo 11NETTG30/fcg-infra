@@ -9,6 +9,7 @@ data:
     datasources:
     - name: Prometheus
       type: prometheus
+      uid: prometheus
       access: proxy
       url: http://prometheus:9090
       isDefault: true
@@ -27,6 +28,17 @@ data:
           matcherRegex: '"traceId":"(\w+)"'
           name: TraceID
           url: "$${__value.raw}"
+  dashboards-provisioning.yaml: |
+    apiVersion: 1
+    providers:
+    - name: FCG Dashboards
+      orgId: 1
+      folder: FCG
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /var/lib/grafana/dashboards
   grafana.ini: |
     [auth.anonymous]
     enabled = true

@@ -10,16 +10,26 @@ Contém os arquivos Docker Compose e manifestos Kubernetes para orquestrar todos
 
 ```
 fcg-infra/
-├── compose-images/     ← Docker Compose usando imagens publicadas no GHCR
-├── compose-builds/     ← Docker Compose com build local dos microsserviços
+├── .github/
+│   └── workflows/
+│       └── kong-publish.yml   ← CI para build e push da imagem customizada do Kong
+├── compose-images/            ← Docker Compose usando imagens publicadas no GHCR
+├── compose-builds/            ← Docker Compose com build local dos microsserviços
+├── kong/
+│   └── Dockerfile             ← Imagem customizada do Kong com plugin jwt-keycloak
 └── k8s/
     ├── namespace.yaml
     ├── ingress.yaml
+    ├── kong/                  ← API Gateway
+    │   ├── configmap.yaml     ← Configuração declarativa (rotas, plugins, JWT)
+    │   ├── deployment.yaml
+    │   ├── service.yaml
+    │   └── secret.example.yaml
     ├── rabbitmq/
     ├── mailpit/
-    ├── fcg-users/      ← API + PostgreSQL
-    ├── fcg-catalog/    ← API + PostgreSQL
-    ├── fcg-payments/   ← API + PostgreSQL
+    ├── fcg-users/             ← API + PostgreSQL
+    ├── fcg-catalog/           ← API + PostgreSQL
+    ├── fcg-payments/          ← API + PostgreSQL
     ├── fcg-notifications/
     └── observabilidade/
         ├── grafana/
@@ -145,8 +155,7 @@ Adicione as entradas abaixo no arquivo hosts do sistema operacional:
 - **Windows:** `C:\Windows\System32\drivers\etc\hosts`
 
 ```
-127.0.0.1 users-api.fcg
-127.0.0.1 catalog-api.fcg
+127.0.0.1 api.fcg
 127.0.0.1 rabbitmq.fcg
 127.0.0.1 grafana.fcg
 127.0.0.1 mailpit.fcg
@@ -178,13 +187,30 @@ kubectl apply -f k8s/ --recursive
 
 ### URLs de acesso
 
+| Serviço | URL | Observação |
+|---|---|---|
+| API Gateway | http://api.fcg | Ponto único de entrada — todas as requisições passam pelo Kong |
+| RabbitMQ Management | http://rabbitmq.fcg | — |
+| Grafana | http://grafana.fcg | admin / admin |
+| Mailpit | http://mailpit.fcg | — |
+
+### Swagger (documentação das APIs)
+
+O Swagger não é exposto pelo Kong. Para acessá-lo, utilize port-forward direto no serviço:
+
+```bash
+kubectl port-forward svc/users-api 5083:80 -n fcg
+kubectl port-forward svc/catalog-api 5084:80 -n fcg
+```
+
 | Serviço | URL |
 |---|---|
-| fcg-users (Swagger) | http://users-api.fcg/swagger/index.html |
-| fcg-catalog (Swagger) | http://catalog-api.fcg/swagger/index.html |
-| RabbitMQ Management | http://rabbitmq.fcg |
-| Grafana | http://grafana.fcg (admin / admin) |
-| Mailpit | http://mailpit.fcg |
+| fcg-users | http://localhost:5083/swagger/index.html |
+| fcg-catalog | http://localhost:5084/swagger/index.html |
+
+> ⚠️ O "Try it out" do Swagger bate diretamente na API via port-forward,
+> sem passar pelo Kong. Use-o apenas para consultar as rotas disponíveis.
+> Para testar o roteamento pelo Kong, utilize o Postman ou similar.
 
 ### Atualizar um serviço
 
@@ -229,3 +255,43 @@ kubectl delete all --all -n fcg
 # Remover PVCs dos bancos de dados
 kubectl delete pvc -n fcg --all
 ```
+
+---
+
+## Decisões Arquiteturais e Riscos
+
+### JWT Keycloak Plugin (Kong)
+
+**Decisão:** Utilização do plugin `jwt-keycloak` via fork da Platformatory
+em vez do plugin `jwt` nativo do Kong.
+
+**Motivo:** O plugin nativo exige que a chave pública RSA seja declarada
+estaticamente no configmap, o que significa que toda vez que a chave rotacionar
+na UsersAPI, o configmap precisaria ser atualizado manualmente e o Kong
+reiniciado. O `jwt-keycloak` resolve isso via JWKS discovery, buscando
+a chave pública diretamente no endpoint `/.well-known/jwks.json` da UsersAPI
+de forma automática.
+
+**Riscos:**
+- O plugin original foi abandonado em 2021. O fork utilizado é mantido
+  pela Platformatory para uso interno, sem garantias de suporte.
+- Testado oficialmente até Kong 3.4. O ambiente utiliza Kong 3.9 —
+  compatibilidade não garantida.
+- Dependência de repositório externo no build da imagem. Se o repositório
+  for removido ou alterado, o CI quebra.
+- Fork com baixa adoção (4 estrelas no GitHub), o que reduz a chance de
+  bugs conhecidos serem reportados e corrigidos.
+
+**Importante:** Esta abordagem foi adotada como exercício acadêmico para
+explorar o conceito de JWKS discovery e rotação automática de chaves.
+Em um ambiente real de produção, esta solução provavelmente não seria
+adotada. As alternativas mais adequadas seriam:
+- **Kong Enterprise** com o plugin `openid-connect` nativo e suportado oficialmente.
+- **Plugin `jwt` nativo** com um processo automatizado de rotação de chave
+  via CI/CD, que atualizaria o configmap e reiniciaria o Kong sem intervenção manual.
+- **Migração para um provedor de identidade dedicado** como Keycloak ou Auth0,
+  que possuem integrações oficiais e suportadas com o Kong.
+
+**Alternativa considerada:** Plugin `jwt` nativo com chave pública estática
+no configmap. Mais simples e sem dependências externas, porém exige
+intervenção manual a cada rotação de chave.

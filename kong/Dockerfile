@@ -20,5 +20,3 @@ USER root
 COPY --from=builder /plugin/kong-plugin-jwt-keycloak-1.3.0-1.all.rock /tmp/
 
 RUN luarocks install /tmp/kong-plugin-jwt-keycloak-1.3.0-1.all.rock
-
-USER kongfix: corrige package manager do dockerfile para debian

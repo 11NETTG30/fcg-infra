@@ -40,7 +40,7 @@ spec:
 
       containers:
         - name: kong
-          image: kong:3.9
+          image: ghcr.io/11nettg30/fcg-kong:latest
 
           command:
             - /docker-entrypoint.sh
@@ -97,7 +97,7 @@ spec:
               value: notice
 
             - name: KONG_PLUGINS
-              value: bundled
+              value: bundled,jwt-keycloak
 
             - name: KONG_TRUSTED_IPS
               value: "0.0.0.0/0"

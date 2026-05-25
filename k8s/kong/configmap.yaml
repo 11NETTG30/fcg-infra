@@ -14,20 +14,39 @@ data:
         read_timeout: 60000
         write_timeout: 60000
         routes:
-          - name: users-routes
+          - name: users-auth-public
             hosts:
               - api.fcg
             paths:
-              - ~/identidade/(.*)
+              - ~/identidade/(auth/.*)
             strip_path: true
             preserve_host: false
-
             plugins:
               - name: request-transformer
                 config:
                   replace:
                     uri: /api/$(uri_captures[1])
 
+          - name: users-protected
+            hosts:
+              - api.fcg
+            paths:
+              - ~/identidade/(.*)
+            strip_path: true
+            preserve_host: false
+            plugins:
+              - name: request-transformer
+                config:
+                  replace:
+                    uri: /api/$(uri_captures[1])
+              - name: jwt-keycloak
+                config:
+                  allowed_iss:
+                    - fcg-users
+                  well_known_template: http://users-api.fcg.svc.cluster.local:80/.well-known/openid-configuration
+                  claims_to_verify:
+                    - exp
+                  consumer_match: false
 
       - name: catalog-api
         url: http://catalog-api.fcg.svc.cluster.local:80
@@ -42,12 +61,19 @@ data:
               - ~/catalogo/(.*)
             strip_path: true
             preserve_host: false
-
             plugins:
               - name: request-transformer
                 config:
                   replace:
                     uri: /api/$(uri_captures[1])
+              - name: jwt-keycloak
+                config:
+                  allowed_iss:
+                    - fcg-users
+                  well_known_template: http://users-api.fcg.svc.cluster.local:80/.well-known/openid-configuration
+                  claims_to_verify:
+                    - exp
+                  consumer_match: false
 
     plugins:
       - name: rate-limiting

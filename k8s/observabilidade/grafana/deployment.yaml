@@ -30,6 +30,11 @@ spec:
         - name: grafana-ini
           mountPath: /etc/grafana/grafana.ini
           subPath: grafana.ini
+        - name: dashboards-provisioning
+          mountPath: /etc/grafana/provisioning/dashboards/dashboards.yaml
+          subPath: dashboards-provisioning.yaml
+        - name: grafana-dashboards
+          mountPath: /var/lib/grafana/dashboards
         resources:
           requests:
             memory: "64Mi"
@@ -50,3 +55,12 @@ spec:
           items:
           - key: grafana.ini
             path: grafana.ini
+      - name: dashboards-provisioning
+        configMap:
+          name: grafana-config
+          items:
+          - key: dashboards-provisioning.yaml
+            path: dashboards-provisioning.yaml
+      - name: grafana-dashboards
+        configMap:
+          name: grafana-dashboards

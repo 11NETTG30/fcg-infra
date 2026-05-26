@@ -41,6 +41,7 @@ spec:
       containers:
       - name: users-api
         image: ghcr.io/11nettg30/fcg-users-api:latest
+        imagePullPolicy: Always
         ports:
           - containerPort: 8080
         envFrom:

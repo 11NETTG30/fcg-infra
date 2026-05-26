@@ -101,8 +101,6 @@ services:
       RabbitMQ__Password: ${RABBITMQ_PASSWORD}
       MongoDB__ConnectionString: ${MONGODB_CONNECTION_STRING}
       MongoDB__DatabaseName: ${MONGODB_DATABASE_NAME}
-      Jwt__Authority: http://fcg-users:8080
-      Jwt__Audiencia: fcg-services
       Documentacao__Habilitada: "true"
     depends_on:
       postgres-catalog:

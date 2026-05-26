@@ -41,6 +41,7 @@ spec:
       containers:
       - name: payment-api
         image: ghcr.io/11nettg30/fcg-payments-api:latest
+        imagePullPolicy: Always
         ports:
           - containerPort: 8080
         envFrom:

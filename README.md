@@ -79,6 +79,10 @@ Existem dois ambientes Docker Compose com propósitos distintos:
 | `compose-images/` | Sobe o ambiente completo usando as imagens já publicadas no GHCR |
 | `compose-builds/` | Faz o build local de cada microsserviço a partir do código-fonte |
 
+### ⚠️ Autenticação no Docker Compose
+
+O ambiente Docker Compose é destinado ao **desenvolvimento local**. O Kong API Gateway não está presente neste ambiente, portanto **a autenticação JWT está desabilitada** nos microsserviços.
+
 ### Portas expostas (Docker Compose)
 
 | Serviço | Porta |
@@ -208,9 +212,7 @@ kubectl port-forward svc/catalog-api 5084:80 -n fcg
 | fcg-users | http://localhost:5083/swagger/index.html |
 | fcg-catalog | http://localhost:5084/swagger/index.html |
 
-> ⚠️ O "Try it out" do Swagger bate diretamente na API via port-forward,
-> sem passar pelo Kong. Use-o apenas para consultar as rotas disponíveis.
-> Para testar o roteamento pelo Kong, utilize o Postman ou similar.
+> ⚠️ O "Try it out" do Swagger bate diretamente na API via port-forward, sem passar pelo Kong. Use-o apenas para consultar as rotas disponíveis. Para testar o roteamento pelo Kong, utilize o Postman ou similar.
 
 ### Atualizar um serviço
 
@@ -241,9 +243,8 @@ kubectl exec -it <nome-do-pod> -n fcg -- bash
 # Reiniciar um deployment
 kubectl rollout restart deployment <nome-do-deployment> -n fcg
 
-# Conectar em um banco de dados:
+# Conectar em um banco de dados
 kubectl port-forward svc/mongodb-catalog -n fcg 27017:27017
-
 ```
 
 ### Limpeza
@@ -258,40 +259,52 @@ kubectl delete pvc -n fcg --all
 
 ---
 
-## Decisões Arquiteturais e Riscos
+## 🔐 Autenticação e Autorização
+
+### Estratégia adotada
+
+A autenticação é realizada em duas camadas:
+
+| Camada | Responsabilidade |
+|---|---|
+| **Kong (API Gateway)** | Valida a assinatura criptográfica e a expiração (`exp`) do token JWT via JWKS discovery no endpoint `/.well-known/jwks.json` da UsersAPI. Rejeita requisições sem token ou com token inválido antes de chegar nos microsserviços |
+| **Microsserviços** | Confiam que toda requisição que chegou pelo Kong já foi autenticada. Responsáveis apenas pela **autorização** — verificação de roles e policies específicas de cada domínio |
+
+### Fluxo de uma requisição autenticada
+
+```
+Cliente → Kong (valida assinatura + exp) → Microsserviço (verifica roles + policies)
+```
+
+### Docker Compose (ambiente de desenvolvimento)
+
+No ambiente local via Docker Compose, o Kong não está presente. Como o foco deste ambiente é o desenvolvimento e execução local dos microsserviços, a autenticação JWT não é aplicada — não há necessidade de um API Gateway neste contexto.
+
+```
+Cliente → Microsserviço (sem validação de JWT)
+```
+
+> ⚠️ O ambiente Docker Compose não deve ser usado para simular o comportamento de produção. Para testes com autenticação, utilize o ambiente Kubernetes.
+
+---
+
+## 🏗️ Decisões Arquiteturais e Riscos
 
 ### JWT Keycloak Plugin (Kong)
 
-**Decisão:** Utilização do plugin `jwt-keycloak` via fork da Platformatory
-em vez do plugin `jwt` nativo do Kong.
+**Decisão:** Utilização do plugin `jwt-keycloak` via fork da Platformatory em vez do plugin `jwt` nativo do Kong.
 
-**Motivo:** O plugin nativo exige que a chave pública RSA seja declarada
-estaticamente no configmap, o que significa que toda vez que a chave rotacionar
-na UsersAPI, o configmap precisaria ser atualizado manualmente e o Kong
-reiniciado. O `jwt-keycloak` resolve isso via JWKS discovery, buscando
-a chave pública diretamente no endpoint `/.well-known/jwks.json` da UsersAPI
-de forma automática.
+**Motivo:** O plugin nativo exige que a chave pública RSA seja declarada estaticamente no configmap, o que significa que toda vez que a chave rotacionar na UsersAPI, o configmap precisaria ser atualizado manualmente e o Kong reiniciado. O `jwt-keycloak` resolve isso via JWKS discovery, buscando a chave pública diretamente no endpoint `/.well-known/jwks.json` da UsersAPI de forma automática.
 
 **Riscos:**
-- O plugin original foi abandonado em 2021. O fork utilizado é mantido
-  pela Platformatory para uso interno, sem garantias de suporte.
-- Testado oficialmente até Kong 3.4. O ambiente utiliza Kong 3.9 —
-  compatibilidade não garantida.
-- Dependência de repositório externo no build da imagem. Se o repositório
-  for removido ou alterado, o CI quebra.
-- Fork com baixa adoção (4 estrelas no GitHub), o que reduz a chance de
-  bugs conhecidos serem reportados e corrigidos.
+- O plugin original foi abandonado em 2021. O fork utilizado é mantido pela Platformatory para uso interno, sem garantias de suporte
+- Testado oficialmente até Kong 3.4. O ambiente utiliza Kong 3.9 — compatibilidade não garantida
+- Dependência de repositório externo no build da imagem. Se o repositório for removido ou alterado, o CI quebra
+- Fork com baixa adoção (4 estrelas no GitHub), o que reduz a chance de bugs conhecidos serem reportados e corrigidos
 
-**Importante:** Esta abordagem foi adotada como exercício acadêmico para
-explorar o conceito de JWKS discovery e rotação automática de chaves.
-Em um ambiente real de produção, esta solução provavelmente não seria
-adotada. As alternativas mais adequadas seriam:
-- **Kong Enterprise** com o plugin `openid-connect` nativo e suportado oficialmente.
-- **Plugin `jwt` nativo** com um processo automatizado de rotação de chave
-  via CI/CD, que atualizaria o configmap e reiniciaria o Kong sem intervenção manual.
-- **Migração para um provedor de identidade dedicado** como Keycloak ou Auth0,
-  que possuem integrações oficiais e suportadas com o Kong.
+**Importante:** Esta abordagem foi adotada como exercício acadêmico para explorar o conceito de JWKS discovery e rotação automática de chaves. Em um ambiente real de produção, esta solução provavelmente não seria adotada. As alternativas mais adequadas seriam:
+- **Kong Enterprise** com o plugin `openid-connect` nativo e suportado oficialmente
+- **Plugin `jwt` nativo** com um processo automatizado de rotação de chave via CI/CD, que atualizaria o configmap e reiniciaria o Kong sem intervenção manual
+- **Migração para um provedor de identidade dedicado** como Keycloak ou Auth0, que possuem integrações oficiais e suportadas com o Kong
 
-**Alternativa considerada:** Plugin `jwt` nativo com chave pública estática
-no configmap. Mais simples e sem dependências externas, porém exige
-intervenção manual a cada rotação de chave.
+**Alternativa considerada:** Plugin `jwt` nativo com chave pública estática no configmap. Mais simples e sem dependências externas, porém exige intervenção manual a cada rotação de chave.

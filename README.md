@@ -25,10 +25,13 @@ fcg-infra/
     │   ├── deployment.yaml
     │   ├── service.yaml
     │   └── secret.example.yaml
+    ├── redis/
+    │   ├── deployment.yaml
+    │   └── service.yaml
     ├── rabbitmq/
     ├── mailpit/
     ├── fcg-users/             ← API + PostgreSQL
-    ├── fcg-catalog/           ← API + PostgreSQL
+    ├── fcg-catalog/           ← API + PostgreSQL + MongoDB
     ├── fcg-payments/          ← API + PostgreSQL
     ├── fcg-notifications/
     └── observabilidade/

@@ -28,7 +28,7 @@ fcg-infra/
     ├── rabbitmq/
     ├── mailpit/
     ├── fcg-users/             ← API + PostgreSQL
-    ├── fcg-catalog/           ← API + PostgreSQL
+    ├── fcg-catalog/           ← API + PostgreSQL + MongoDB
     ├── fcg-payments/          ← API + PostgreSQL
     ├── fcg-notifications/
     └── observabilidade/

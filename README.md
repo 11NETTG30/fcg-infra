@@ -6,6 +6,16 @@ Contém os arquivos Docker Compose e manifestos Kubernetes para orquestrar todos
 
 ---
 
+## Etapa 4
+
+A pasta k8s-cloud foi adicionada para a etapa 4, para subir todos os serviços para a Azure.
+
+Após configurar o ambiente (kubectl, az client), subir todos os serviços para a AKS:
+
+kubectl apply -R -f k8s-cloud/
+
+---
+
 ## 📁 Estrutura do Repositório
 
 ```

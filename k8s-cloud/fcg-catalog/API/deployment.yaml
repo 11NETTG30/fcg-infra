@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-api
+  namespace: fcg
+spec:
+  replicas: 2
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+
+  selector:
+    matchLabels:
+      app: catalog-api
+
+  template:
+    metadata:
+      labels:
+        app: catalog-api
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z postgres-catalog 5432; do
+                echo "Aguardando banco de dados catalog..."
+                sleep 3
+              done
+              echo "Banco OK!"
+
+        - name: wait-for-rabbitmq
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z rabbitmq 5672; do
+                echo "Aguardando RabbitMQ..."
+                sleep 3
+              done
+              echo "RabbitMQ OK!"
+
+      containers:
+      - name: catalog-api
+        image: acrfcg.azurecr.io/fcg-catalog-api:2.0
+        ports:
+          - containerPort: 8080
+        envFrom:
+          - secretRef:
+              name: catalog-secret
+          - configMapRef:
+              name: catalog-config
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "100m"

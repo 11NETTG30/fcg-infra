@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: users-config
+  namespace: fcg
+data:
+  RabbitMQ__Host: rabbitmq
+  RabbitMQ__VirtualHost: /
+  Documentacao__Habilitada: "true"
+  OTEL_SERVICE_NAME: UsersAPI
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317

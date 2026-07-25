@@ -11,6 +11,7 @@
 *.sln.docstates
 *.env
 k8s/**/secret.yaml
+k8s-cloud/**/secret.yaml
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

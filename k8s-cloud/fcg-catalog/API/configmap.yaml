@@ -9,3 +9,4 @@ data:
   Documentacao__Habilitada: "true"
   OTEL_SERVICE_NAME: CatalogAPI
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+  Elasticsearch__IndiceJogos: jogos
